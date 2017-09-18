@@ -2,209 +2,199 @@ import pygame
 import time
 from pygame.locals import *
 import random
-
+#界面元素的基类
 class Base(object):
-    '基类的基类，也就是所有界面元素的基类'
+    #飞机的基类
+    def __init__(self,screen,x,y,imgsrc):
+        #设置飞机默认位置
+        self.x=x
+        self.y=y
 
-    def __init__(self, screen, x, y, imagePath):
-        # 子弹的坐标
-        self.x = x
-        self.y = y
+        #设置要显示内容的窗口
+        self.screen=screen
 
-        # 子弹的图片
-        self.imagePath = imagePath
-        self.image = pygame.image.load(self.imagePath)
+        #保存英雄飞机的显示图片名字
+        self.imageName=imgsrc
 
-        # 显示的窗口
-        self.screen = screen
+        #根据名字在背景图上生成飞机的图片
+        self.image=pygame.image.load(self.imageName)
+
 
     def display(self):
-        '显示子弹'
-        self.screen.blit(self.image, (self.x,self.y))
+
+        self.screen.blit(self.image,(self.x,self.y))
+
 
 class BasePlane(Base):
-    '飞机基类'
+    #飞机的基类
+    def __init__(self,screen,x,y,imgsrc):
+        super(BasePlane, self).__init__(screen,x,y,imgsrc)
 
-    def __init__(self, screen, x, y, imagePath):
-        super(BasePlane, self).__init__(screen, x, y, imagePath)
 
-        # 子弹的列表
-        self.bullets = []
-
+        #用来保存英雄飞机发射出的所有的子弹
+        self.bullets=[]
+        #显示加载实物在页面
     def display(self):
-        '显示飞机'
+
         super(BasePlane, self).display()
 
-        # 遍历列表的同时，删除列表的元素，是不稳定的代码
-        # for bullet in self.bullets:
-        #     bullet.display()
-        #     bullet.move()
-        #
-        #     # 如果子弹已经移动到屏幕之外，则可以从子弹列表移除
-        #     if bullet.y <= 0:
-        #         self.bullets.remove(bullet)
-
-        # 删除列表的数据，最好是使用一个临时列表來中转
-        tmp = []
+        tmp=[]
         for bullet in self.bullets:
             bullet.display()
             bullet.move()
-
-            # 如果子弹已经移动到屏幕之外，则可以从子弹列表移除
             if bullet.judge():
                 tmp.append(bullet)
-
         for bullet in tmp:
             self.bullets.remove(bullet)
+            #如果子弹已经移动到屏幕顶部则可从列表已移除
 
     def moveLeft(self):
-        '玩家飞机，向左移动'
-        self.x -= 5
-
+        self.x-=5
     def moveRight(self):
-        '玩家飞机，向右移动'
-        self.x += 5
+        self.x+=5
 
-class BaseBullet(Base):
-    '子弹的基类'
 
-    def __init__(self, screen, x, y, imagePath):
-        super(BaseBullet, self).__init__(screen, x, y, imagePath)
+class hero_plane(BasePlane):
+    #玩家飞机
+    def __init__(self,screen):
 
-class HeroPlane(BasePlane):
-    '玩家飞机'
+        super(hero_plane, self).__init__(screen,120,400,'./pic/hero.gif')
 
-    def __init__(self, screen):
-        super(HeroPlane, self).__init__(screen, 190, 550, './feiji/hero.gif')
+    def moveLeft(self):
+        if self.x>0:
+            self.x-=20
+    def moveRight(self):
+        if self.x<220:
+            self.x+=20
+    def moveUp(self):
+        if self.y>0:
+            self.y-=20
+    def moveDown(self):
+        if self.y<420:
+            self.y+=20
+    #射击
+    def biu(self):
+        #射出子弹的显示位置
+        newBullet=Bullet(self.x,self.y,self.screen)
+        self.bullets.append(newBullet)
+        #把显示出的子弹添加到列表里多个显示
 
-    def shoot(self):
-        '发射一颗子弹'
-        # print('biu biu biu')
-        bullet = Bullet(self.x, self.y, self.screen)
-        self.bullets.append(bullet)
+#  敌人的飞机
+class enemy_plane(BasePlane):
 
-class EnemyPlane(BasePlane):
-    '敌人飞机'
+    def __init__(self,screen):
+        super(enemy_plane, self).__init__(screen, 0, 0, './pic/enemy1.png')
 
-    def __init__(self, screen):
-        super(EnemyPlane, self).__init__(screen, 0, 0,'./feiji/enemy-1.gif')
-
-        # 移动的方向状态
-        self.oritation = 'right'
-
+        self.direction="right"
+     #敌机移动的轨迹
     def move(self):
-        '移动敌人飞机'
-        if self.x == 0:
-            self.oritation = 'right'
-        elif self.x == (480-50):
-            self.oritation = 'left'
 
-        if self.oritation == 'right':
+        if self.x==0:
+            self.direction='right'
+
+        elif self.x==(320-60):
+            self.direction='left'
+
+        if self.direction=='right':
             self.moveRight()
         else:
             self.moveLeft()
 
-    def shoot(self):
-        '发射一颗子弹'
-        # print('enemy biu biu biu')
-        num = random.randint(1,10)
-        if num == 10:
-            bullet = EnemyBullet(self.x, self.y, self.screen)
-            self.bullets.append(bullet)
+    #射击
+    def biu(self):
+        #射出子弹的显示位置
+        num=random.randint(1,50)
+        if num==10:
+            newBullet=EnemyBullet(self.x,self.y,self.screen)
+            self.bullets.append(newBullet)  #把显示出的子弹添加到列表里多个显示
 
 
+#子弹的基类
+class BaseBullet(Base):
+    #初始化显示属性
+    def __init__(self,screen,x,y,imgsrc):
+        super(BaseBullet, self).__init__(screen,x,y,imgsrc)
+
+#hero子弹的类
 class Bullet(BaseBullet):
+    #初始化显示属性
+    def __init__(self,x,y,screen):
+        super(Bullet, self).__init__(screen,x+40,y-20,'./pic/bullet-3.gif')
 
-    def __init__(self, planeX, planeY, screen):
-        super(Bullet, self).__init__(screen, planeX+40, planeY-30,'./feiji/bullet.png')
-
+    #子弹向上移动击中敌机    
     def move(self):
-        self.y -= 10
+        self.y-=5
 
     def judge(self):
-        '判断子弹是否越界'
-        return self.y <= 0
+        return self.y<=0
 
-    def __del__(self):
-        print('玩家子弹被销毁了')
-
+#敌机子弹的类
 class EnemyBullet(BaseBullet):
-
-    def __init__(self, planeX, planeY, screen):
-        super(EnemyBullet, self).__init__(screen, planeX+25, planeY+40, './feiji/bullet1.png')
-
+    #初始化显示属性
+    def __init__(self,x,y,screen):
+        super(EnemyBullet, self).__init__(screen,x+60,y+60,'./pic/bullet2.png')
+    #子弹的运动轨迹
     def move(self):
-        self.y += 10
-
+        self.y+=5
+    #子弹的越界
     def judge(self):
-        '判断子弹是否越界'
-        return self.y >= 700
-
-    def __del__(self):
-        print('敌人子弹被销毁了')
+        return self.y>=550
 
 def main():
-    '程序的主逻辑代码'
+    #创建窗口
+    screen=pygame.display.set_mode((320,550),0,32)
+    #创建bgc图片
+    bgc=pygame.image.load('./pic/background.png')
+    #创建英雄飞机
+    hero=hero_plane(screen)
+    #创建敌人飞机
+    enemy=enemy_plane(screen)
 
-    # 创建窗口
-    screen = pygame.display.set_mode((480, 700), 0, 32)
-
-    # 创建背景图片
-    bg = pygame.image.load('./feiji/background.png')
-
-    # 创建玩家飞机图片
-    hero = HeroPlane(screen)
-
-    # 创建敌人飞机
-    enemy = EnemyPlane(screen)
-
+#利用循环刷新图片移动位置更新界面
     while True:
-        # print('刷新界面')
-        # 显示背景图片
-        screen.blit(bg, (0,0))
+        #显示背景图片
+        screen.blit(bgc,(0,0))
 
-        # 显示玩家飞机
+        # 显示飞机
         hero.display()
 
-        # 显示敌人飞机
+        #显示敌机
         enemy.display()
 
-        # 移动敌人飞机位置
+        #敌机移动
         enemy.move()
 
-        # 自动发射敌人的子弹
-        enemy.shoot()
+        #敌机自动随机发弹
+        enemy.biu()
 
-        # 获取事件，比如按键等
+        #检测键盘
         for event in pygame.event.get():
-
-            # 判断是否是点击了退出按钮
-            if event.type == QUIT:
-                print("exit")
+            #判断退出
+            if event.type==QUIT:
+                print("退出")
                 exit()
-            # 判断是否是按下了键
-            elif event.type == KEYDOWN:
-                # 检测按键是否是a或者left
-                if event.key == K_a or event.key == K_LEFT:
-                    print('left')
+            #判断是否按下键盘
+            elif event.type==KEYDOWN:
+                if event.key==K_a or event.key==K_LEFT:
+                    print("向左移动")
                     hero.moveLeft()
-
-                # 检测按键是否是d或者right
-                elif event.key == K_d or event.key == K_RIGHT:
-                    print('right')
+                elif event.key==K_d or event.key==K_RIGHT:
+                    print("向右移动")
                     hero.moveRight()
-
-                # 检测按键是否是空格键
-                elif event.key == K_SPACE:
-                    print('space')
-                    hero.shoot()
-
-        # 刷新界面
+                elif event.key==K_w or event.key==K_UP:
+                    print("向上移动")
+                    hero.moveUp()
+                elif event.key==K_s or event.key==K_DOWN:
+                    print("向下移动")
+                    hero.moveDown()
+                elif event.key==K_SPACE:
+                    print("射击")
+                    hero.biu()
         pygame.display.update()
-
-        time.sleep(1/100) # 休息一段时间，再刷新界面
-
-if __name__ == '__main__':
+        #延迟循环执行时间提升cpu性能
+        time.sleep(1/100)
+if __name__=='__main__':
     print('程序开始')
     main()
+else:
     print('程序结束')
